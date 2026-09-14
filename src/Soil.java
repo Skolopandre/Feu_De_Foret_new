@@ -34,11 +34,14 @@ public class Soil extends SoilCell {
         newSoil.waterDepth-=evaporation;
         forest.updateAtmosphericHumidityAt(x,y,evaporation);
 
-        double surplus = -(1-this.getWaterContent()) ;
-        redistributeSurplus(forest,newSoilField,surplus,x,y);
+        if(this.getWaterContent()>1){
+			double surplus = -(1-this.getWaterContent()) ;
+        	redistributeSurplus(forest,newSoilField,surplus,x,y);
+			this.setWaterContent(0,surplus);
+		}
         
-        if (waterDepth < 0)
-            waterDepth = 0;
+        if (this.waterDepth < 0)
+            this.waterDepth = 0;
     }
  
     private void redistributeSurplus(Forest forest, SoilCell[][] newSoilField, double surplus, int x, int y) {
