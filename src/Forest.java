@@ -130,39 +130,7 @@ public class Forest {
     }
 
     //--------------HYDROLOGIE-------------//
-    private static class FlowCell {
-        int x;
-        int y;
-        double elevation;
-
-        FlowCell(int x, int y, double elevation) {
-            this.x = x;
-            this.y = y;
-            this.elevation = elevation;
-        }
-    }
-
-    private static class Direction {
-        int dx;
-        int dy;
-
-        Direction(int dx,int dy){
-            this.dx = dx;
-            this.dy = dy;
-        }
-    }
-
-    private static final Direction[] DIRECTIONS = {
-            new Direction(-1,-1),
-            new Direction(-1,0),
-            new Direction(-1,1),
-            new Direction(0,-1),
-            new Direction(0,1),
-            new Direction(1,-1),
-            new Direction(1,0),
-            new Direction(1,1)
-    };
-
+    
     private int[] randomHighPoint(double minElevation){
 
         while(true){
@@ -465,7 +433,7 @@ public class Forest {
 
             int[] source = randomHighPoint(minElevation);
 
-            SoilField[source[0]][source[1]].setSource(true);
+            this.soilField[source[0]][source[1]].setSource(true);
         }
     }
 
@@ -481,7 +449,5 @@ public class Forest {
     public SoilCell getSoilFieldAt(int x, int y) {return soilField[x][y];}
     public CloudCell[][] getCloudField(){return cloudField;}
     public CloudCell getCloudFieldAt(int x,int y){return cloudField[x][y];}
-    public int getFlowDirX(int x,int y){return flowDirX[x][y];}
-    public int getFlowDirY(int x,int y){return flowDirY[x][y];}
 
 }
