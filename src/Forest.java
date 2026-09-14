@@ -9,9 +9,6 @@ public class Forest {
     private WindCell[][] windField;
     private double[][] ElevationMap;
     private SoilCell[][] soilField;
-    private int[][] flowDirX;
-    private int[][] flowDirY;
-    private double[][] flowAccum;
     private CloudCell[][] cloudField;
     private double[][] atmosphericHumidity;
 
@@ -24,9 +21,6 @@ public class Forest {
         this.windField = new WindCell[width][height];
         this.ElevationMap = new double[width][height];
         this.soilField = new SoilCell[width][height];
-        this.flowDirX = new int[width][height];
-        this.flowDirY = new int[width][height];
-        this.flowAccum = new double[width][height];
         this.cloudField = new CloudCell[width][height];
         this.atmosphericHumidity = new double[width][height];
         for(int i=0;i<width;i++){
@@ -37,8 +31,6 @@ public class Forest {
         initializeWind();
         generateValley();
         initializeSoil();
-        computeFlowDirections();
-        computeFlowAccumulation();
         initializeWater();
     }
 
@@ -182,160 +174,7 @@ public class Forest {
                 return new int[]{x,y};
             }
         }
-    }
-
-    private void generateRiver(int startX,int startY){
-
-        int x = startX;
-        int y = startY;
-
-        Direction lastDir = null;
-        int maxLength = width + height;
-
-        for(int step=0; step<maxLength; step++){
-
-            SoilCell soil = soilField[x][y];
-            double volume = soil.getType().getCapacity();
-            soil.setWaterContent(volume,0);
-            soil.addSurfaceWater(volume);
-
-
-            int widthRiver =  step/50 ;
-
-            // Mouiller les cellules voisines pour élargir la rivière
-            for(int dx=-widthRiver; dx<=widthRiver; dx++){
-                for(int dy=-widthRiver; dy<=widthRiver; dy++){
-                    int nx = x + dx;
-                    int ny = y + dy;
-                    if(nx>=0 && nx<width && ny>=0 && ny<height){
-                        SoilCell neighbor = soilField[nx][ny];
-                        double neighborVolume = neighbor.getType().getCapacity() * 0.6; // un peu moins
-                        neighbor.setWaterContent(Math.max(neighbor.getWaterContent(), neighborVolume),0);
-                        neighbor.addSurfaceWater(neighborVolume);
-                    }
-                }
-            }
-
-            double currentElevation = ElevationMap[x][y];
-
-            List<Direction> possible = new ArrayList<>();
-            List<Double> weights = new ArrayList<>();
-            double totalWeight = 0;
-
-            for(Direction d : DIRECTIONS){
-
-                int nx = x + d.dx;
-                int ny = y + d.dy;
-
-                if(nx<0 || nx>=width || ny<0 || ny>=height)
-                    continue;
-
-                double slope = currentElevation - ElevationMap[nx][ny];
-                if(slope <= 0)
-                    continue;
-
-                double weight = slope;
-                if(lastDir != null){
-                    if(d.dx == lastDir.dx && d.dy == lastDir.dy){
-                        weight *= 2.5; // inertie directionnelle
-                    }
-                }
-
-                possible.add(d);
-                weights.add(weight);
-                totalWeight += weight;
-            }
-
-            if(possible.isEmpty()) return;
-
-            double r = random.nextDouble()*totalWeight;
-            Direction chosen = possible.get(0);
-            for(int i=0;i<possible.size();i++){
-                r -= weights.get(i);
-                if(r<=0){
-                    chosen = possible.get(i);
-                    break;
-                }
-            }
-
-            x += chosen.dx;
-            y += chosen.dy;
-            lastDir = chosen;
-
-            if(x<=1 || x>=width-2 || y<=1 || y>=height-2) return;
-        }
-    }
-
-    public void computeFlowDirections() {
-
-        int[][] directions = {
-                {-1,-1},{-1,0},{-1,1},
-                {0,-1},        {0,1},
-                {1,-1},{1,0},{1,1}
-        };
-
-        for(int x=0;x<width;x++){
-            for(int y=0;y<height;y++){
-
-                double current = ElevationMap[x][y];
-                double lowest = current;
-
-                int bestX = -1;
-                int bestY = -1;
-
-                for(int[] d : directions){
-
-                    int nx = x + d[0];
-                    int ny = y + d[1];
-
-                    if(nx>=0 && nx<width && ny>=0 && ny<height){
-
-                        if(ElevationMap[nx][ny] < lowest){
-                            lowest = ElevationMap[nx][ny];
-                            bestX = nx;
-                            bestY = ny;
-                        }
-                    }
-                }
-
-                flowDirX[x][y] = bestX;
-                flowDirY[x][y] = bestY;
-
-            }
-        }
-    }
-
-    public void computeFlowAccumulation() {
-
-        List<FlowCell> cells = new ArrayList<>();
-
-        // Initialisation
-        for(int x=0;x<width;x++){
-            for(int y=0;y<height;y++){
-
-                flowAccum[x][y] = 1.0;
-
-                cells.add(new FlowCell(x,y,ElevationMap[x][y]));
-            }
-        }
-
-        // Tri par altitude décroissante
-        cells.sort((a,b)->Double.compare(b.elevation,a.elevation));
-
-        // Propagation de l'eau
-        for(FlowCell c : cells){
-
-            int x = c.x;
-            int y = c.y;
-
-            int nx = flowDirX[x][y];
-            int ny = flowDirY[x][y];
-
-            if(nx != -1){
-                flowAccum[nx][ny] += flowAccum[x][y];
-            }
-        }
-    }
+    }   
 
 
     //--------------PEDOLOGIE & ELEVATION--------------//
@@ -570,7 +409,6 @@ public class Forest {
 
         double[][] elevationMap = new double[width][height];
 
-        // 1️⃣ Base fractal noise
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
 
@@ -580,7 +418,6 @@ public class Forest {
             }
         }
 
-        // 2️⃣ Ajouter vallées et collines
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
 
@@ -594,10 +431,8 @@ public class Forest {
             }
         }
 
-        // 3️⃣ Lisser
         elevationMap = smoothElevation(elevationMap, 2);
 
-        // 4️⃣ Sauvegarder
         this.ElevationMap = elevationMap;
     }
 
@@ -630,7 +465,7 @@ public class Forest {
 
             int[] source = randomHighPoint(minElevation);
 
-            generateRiver(source[0],source[1]);
+            SoilField[source[0]][source[1]].setSource(true);
         }
     }
 
