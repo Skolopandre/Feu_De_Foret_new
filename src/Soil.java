@@ -34,76 +34,57 @@ public class Soil extends SoilCell {
         newSoil.waterDepth-=evaporation;
         forest.updateAtmosphericHumidityAt(x,y,evaporation);
 
-        int nx = x+forest.getFlowDirX(x,y);
-        int ny = y+forest.getFlowDirY(x,y);
-
-        if (forest.isInside(nx, ny)) {
-
-            SoilCell target = forest.getSoilFieldAt(nx, ny);
-
-            double flow = 0.1 * waterDepth;
-
-            waterDepth -= flow;
-            target.addSurfaceWater(flow);
-        }
+        double surplus = -(1-this.getWaterContent()) ;
+        redistributeSurplus(forest,newSoilField,surplus,x,y);
+        
         if (waterDepth < 0)
             waterDepth = 0;
     }
-
-    /*Legacy code
+ 
     private void redistributeSurplus(Forest forest, SoilCell[][] newSoilField, double surplus, int x, int y) {
 
         double[][] elevationMap = forest.getElevationMap();
         int width = forest.getWidth();
         int height = forest.getHeight();
 
-        int[][] directions = {{-1,0},{1,0},{0,-1},{0,1}};
+        int[][] directions = {{-1,0},{-1,-1},{-1,1},{1,0},{1,-1},{1,1},{0,-1},{0,1}};
 
         double currentElevation = elevationMap[x][y];
 
-        List<int[]> neighbors = new ArrayList<>();
-        List<Double> slopes = new ArrayList<>();
-
-        double totalSlope = 0;
+        List<int[]> candidates = new ArrayList<>();
+        Double min_height = Double.MAX_VALUE ;
 
         for (int[] dir : directions) {
-
             int nx = x + dir[0];
-            int ny = y + dir[1];
+		    int ny = y + dir[1];
+		    double h = elevationMap[nx][ny] ;
 
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-
-                double neighborElevation = elevationMap[nx][ny];
-                double slope = currentElevation - neighborElevation;
-
-                if (slope > 0) {
-
-                    neighbors.add(new int[]{nx,ny});
-                    slopes.add(slope);
-                    totalSlope += slope;
-
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height && forest.getSoilAt(x,y) getWaterContent()<1) {
+                if( h<min_height){
+				    min_height = h ;
+				    candidates.clear() ;
+				    candidates.add(dir) ;	
+                }else if(h==min_height){
+			        candidate.add(dir) ;
                 }
             }
         }
 
         if (neighbors.isEmpty()) return;
 
-        for (int i = 0; i < neighbors.size(); i++) {
-
-            int[] n = neighbors.get(i);
-            double slope = slopes.get(i);
-
-            double share = surplus * (slope / totalSlope);
-
-            SoilCell neighborCell = newSoilField[n[0]][n[1]];
-
-            if (neighborCell instanceof Soil) {
-                Soil neighborSoil = (Soil) neighborCell;
-                neighborSoil.waterContent += share;
+        int n = candidate.size() ;
+        
+        for (int i = 0; i < n; i++) {
+            int[] c = candidate.get(i);
+            double share = surplus/n ;
+            SoilCell neighborCell = newSoilField[c[0]][c[1]] ;
+            If (neighborCell = instance of Soil){
+	            Soil neighborSoil = (Soil)neighborCell ;
+	            neighborSoil.addSurfaceWater+=share ;
             }
         }
     }
-    */
+
 
 
     public SoilType getType(){return type;}
