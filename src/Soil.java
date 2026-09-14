@@ -68,22 +68,20 @@ public class Soil extends SoilCell {
 				    candidates.clear() ;
 				    candidates.add(dir) ;	
                 }else if(h==min_height){
-			        candidate.add(dir) ;
+			        candidates.add(dir) ;
                 }
             }
         }
 
-        if (neighbors.isEmpty()) return;
+        if (candidates.isEmpty()) return;
 
-        int n = candidate.size() ;
+        int n = candidates.size() ;
         
         for (int i = 0; i < n; i++) {
-            int[] c = candidate.get(i);
+            int[] c = candidates.get(i);
             double share = surplus/n ;
             SoilCell neighborCell = newSoilField[c[0]][c[1]] ;
-            If (neighborCell = instance of Soil){
-	            Soil neighborSoil = (Soil)neighborCell ;
-	            neighborSoil.addSurfaceWater+=share ;
+	        neighborSoil.addSurfaceWater(share) ;
             }
         }
     }
