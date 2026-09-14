@@ -16,5 +16,5 @@ public abstract class SoilCell {
     public abstract void setWaterContent(double addVolume,double subVolume);
     public abstract void addSurfaceWater(double amount);
     public abstract double getWaterDepth();
-
+    public abstract void setSource(boolean state);
 }
