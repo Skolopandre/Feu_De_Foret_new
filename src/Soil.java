@@ -100,5 +100,6 @@ public class Soil extends SoilCell {
     public int getY(){return this.y;}
     public double getWaterDepth(){return waterDepth;}
     public void addSurfaceWater(double amount){waterDepth+=amount;}
+	public void setSource(boolean state){this.isSource = state;}
 
 }
