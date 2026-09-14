@@ -6,32 +6,29 @@ public class Soil extends SoilCell {
     private SoilType type;
     private double waterContent;
     private double waterDepth;
+	private boolean isSource;
 
     public Soil(int x, int y,SoilType type){
         super(x,y);
         this.type=type;
         this.waterContent=0;
         this.waterDepth=0;
+		this.isSource = false;
     }
 
     public void updateWater(Forest forest, SoilCell[][] newSoilField) {
         int x = this.getX();
-        int y = this.getY();
+        int y = this.getY();  
 
-        Soil newSoil = new Soil(x, y, this.type);
-        newSoil.setWaterContent(this.waterContent, 0); // Copier le contenu en eau
-        newSoil.addSurfaceWater(this.getWaterDepth());
-        newSoilField[x][y] = newSoil;
-
-        double infiltration= this.type.getPermeability() * newSoil.waterDepth;
+        double infiltration= this.type.getPermeability() * this.waterDepth;
         infiltration = Math.min(infiltration,waterDepth);
 
-        newSoil.waterContent += infiltration;
-        newSoil.waterDepth -= infiltration;
-        newSoil.waterContent=Math.min(waterContent,1.0);
+        this.waterContent += infiltration;
+        this.waterDepth -= infiltration;
+        this.waterContent=Math.min(waterContent,1.0);
 
         double evaporation = 0.003*waterDepth;
-        newSoil.waterDepth-=evaporation;
+        this.waterDepth-=evaporation;
         forest.updateAtmosphericHumidityAt(x,y,evaporation);
 
         if(this.getWaterContent()>1){
@@ -39,9 +36,12 @@ public class Soil extends SoilCell {
         	redistributeSurplus(forest,newSoilField,surplus,x,y);
 			this.setWaterContent(0,surplus);
 		}
-        
-        if (this.waterDepth < 0)
-            this.waterDepth = 0;
+
+		if(this.isSource){this.waterDepth+=1;}
+		
+        if (this.waterDepth < 0){this.waterDepth = 0;}
+
+		newSoilField[x][y] = this;
     }
  
     private void redistributeSurplus(Forest forest, SoilCell[][] newSoilField, double surplus, int x, int y) {
@@ -62,7 +62,7 @@ public class Soil extends SoilCell {
 		    int ny = y + dir[1];
 		    double h = elevationMap[nx][ny] ;
 
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height && forest.getSoilAt(x,y) getWaterContent()<1) {
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height && forest.getSoilAt(x,y).getWaterDepth()<1) {
                 if( h<min_height){
 				    min_height = h ;
 				    candidates.clear() ;
