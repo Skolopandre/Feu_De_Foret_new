@@ -130,7 +130,28 @@ public class Forest {
     }
 
     //--------------HYDROLOGIE-------------//
-    
+
+    private static class Direction {
+        int dx;
+        int dy;
+
+        Direction(int dx,int dy){
+            this.dx = dx;
+            this.dy = dy;
+        }
+    }
+
+    private static final Direction[] DIRECTIONS = {
+            new Direction(-1,-1),
+            new Direction(-1,0),
+            new Direction(-1,1),
+            new Direction(0,-1),
+            new Direction(0,1),
+            new Direction(1,-1),
+            new Direction(1,0),
+            new Direction(1,1)
+    };
+
     private int[] randomHighPoint(double minElevation){
 
         while(true){
@@ -142,7 +163,7 @@ public class Forest {
                 return new int[]{x,y};
             }
         }
-    }   
+    }
 
 
     //--------------PEDOLOGIE & ELEVATION--------------//
@@ -214,7 +235,6 @@ public class Forest {
         double dx = x - center[0];
         double dy = y - center[1];
         double distanceSquared = dx * dx + dy * dy;
-        // Effet gaussien inversé : plus on est proche du centre, plus l'élévation diminue
         return -depth * Math.exp(-distanceSquared / (2 * radius * radius));
     }
 
@@ -222,7 +242,6 @@ public class Forest {
         double dx = x - center[0];
         double dy = y - center[1];
         double distanceSquared = dx * dx + dy * dy;
-        // Effet gaussien : plus on est proche du centre, plus l'élévation augmente
         return height * Math.exp(-distanceSquared / (2 * radius * radius));
     }
 
@@ -235,12 +254,12 @@ public class Forest {
             for (int y = 0; y < height; y++) {
                 double sum = 0.0;
                 int count = 0;
-                // Parcourir le voisinage
+
                 for (int dx = -radius; dx <= radius; dx++) {
+
                     for (int dy = -radius; dy <= radius; dy++) {
                         int nx = x + dx;
                         int ny = y + dy;
-                        // Vérifier les limites de la grille
                         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                             sum += elevationMap[nx][ny];
                             count++;
@@ -257,7 +276,7 @@ public class Forest {
     //--------------INITIALISATIONS--------//
     public void initializeWorld() {
 
-        /* 
+        /*
         //génération des roseaux
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -284,7 +303,7 @@ public class Forest {
                     CellType.TREE,
                     width,
                     height,
-                    0.5,
+                    0.48,
                     random
             );
             treeBiome.generateFrom(grid, x_random, y_random,this);
@@ -369,13 +388,14 @@ public class Forest {
         double zMax = 140.0;
         double minDistance = Math.min(width, height) * 0.15;
 
-        int numValleys = 2 + random.nextInt(5);
-        int numHills = 2 + random.nextInt(5);
+        int numValleys = 10+random.nextInt(5);
+        int numHills = 10+random.nextInt(5);
 
         int[][] valleyCenters = generateUniqueCenters(numValleys, minDistance);
         int[][] hillCenters = generateUniqueCenters(numHills, minDistance);
 
         double[][] elevationMap = new double[width][height];
+
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -386,15 +406,16 @@ public class Forest {
             }
         }
 
+
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
 
                 for (int[] center : valleyCenters) {
-                    elevationMap[x][y] += valleyEffect(x, y, center, 120, 25);
+                    elevationMap[x][y] += valleyEffect(x, y, center, 120, 30);
                 }
 
                 for (int[] center : hillCenters) {
-                    elevationMap[x][y] += hillEffect(x, y, center, 150, 20);
+                    elevationMap[x][y] += hillEffect(x, y, center, 150, 30);
                 }
             }
         }
@@ -430,9 +451,7 @@ public class Forest {
         double minElevation = 150;
 
         for(int i=0;i<riverCount;i++){
-
             int[] source = randomHighPoint(minElevation);
-
             this.soilField[source[0]][source[1]].setSource(true);
         }
     }
@@ -449,5 +468,6 @@ public class Forest {
     public SoilCell getSoilFieldAt(int x, int y) {return soilField[x][y];}
     public CloudCell[][] getCloudField(){return cloudField;}
     public CloudCell getCloudFieldAt(int x,int y){return cloudField[x][y];}
+
 
 }
