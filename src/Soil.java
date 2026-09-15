@@ -17,74 +17,111 @@ public class Soil extends SoilCell {
     }
 
     public void updateWater(Forest forest, SoilCell[][] newSoilField) {
+
         int x = this.getX();
         int y = this.getY();
 
+        double newWaterContent = this.waterContent;
+        double newWaterDepth = this.waterDepth;
 
-        double infiltration= this.type.getPermeability() * this.waterDepth;
-        infiltration = Math.min(infiltration,waterDepth);
+        double infiltration =this.type.getPermeability() * newWaterDepth;
 
-        this.waterContent += infiltration;
-        this.waterDepth -= infiltration;
-        if(this.waterDepth>1){
-            double surplus = -(1-this.waterDepth);
-            redistributeSurplus(forest,newSoilField,surplus,x,y);
-            this.waterDepth=1;
+        infiltration = Math.min(infiltration, newWaterDepth);
+
+        newWaterContent += infiltration;
+        newWaterDepth -= infiltration;
+
+        double evaporation = 0.003 * newWaterDepth;
+        newWaterDepth -= evaporation;
+
+        if (newWaterDepth < 0) {
+            newWaterDepth = 0;
         }
 
+        Soil newSoil = new Soil(x, y, this.type);
 
-        double evaporation = 0.003*waterDepth;
-        this.waterDepth-=evaporation;
-        /*forest.updateAtmosphericHumidityAt(x,y,evaporation);
+        newSoil.setWaterContent(newWaterContent, 0);
+        newSoil.addSurfaceWater(newWaterDepth);
+        newSoil.setSource(this.isSource);
 
-         */
-        if (waterDepth < 0){waterDepth = 0;}
-        if (this.isSource){
-            this.waterDepth+=10;
+
+        if (this.isSource) {
+            newSoil.addSurfaceWater(10);
         }
 
-        newSoilField[x][y] = this;
+        newSoilField[x][y] = newSoil;
     }
 
 
-    private void redistributeSurplus(Forest forest, SoilCell[][] newSoilField, double surplus, int x, int y) {
+    public void redistributeSurplus(
+            Forest forest,
+            SoilCell[][] newSoilField) {
 
+        int x = this.getX();
+        int y = this.getY();
+
+        if (this.waterDepth <= 1) {return;}
+
+        double surplus = this.waterDepth - 1;
+        this.waterDepth = 1;
         double[][] elevationMap = forest.getElevationMap();
 
-        int[][] directions = {{-1,0},{-1,-1},{-1,1},{1,0},{1,-1},{1,1},{0,-1},{0,1}};
+        int[][] directions = {
+                {-1, 0},
+                {1, 0},
+                {0, -1},
+                {0, 1},
+                {-1,-1},
+                {-1,1},
+                {1,-1},
+                {1,1}
+        };
 
         List<int[]> candidates = new ArrayList<>();
-        Double min_height = Double.MAX_VALUE ;
+        double minSlope = Double.MAX_VALUE;
 
         for (int[] dir : directions) {
+
             int nx = x + dir[0];
             int ny = y + dir[1];
-            if(forest.isInside(nx,ny)) {
-                double h = elevationMap[nx][ny];
 
-                if (forest.getSoilFieldAt(nx, ny).getWaterDepth() < 1) {
-                    if (h < min_height) {
-                        min_height = h;
-                        candidates.clear();
-                        candidates.add(dir);
-                    } else if (h == min_height) {
-                        candidates.add(dir);
-                    }
-                }
+            if (!forest.isInside(nx, ny)) {
+                continue;
+            }
+
+            SoilCell oldNeighbor = forest.getSoilFieldAt(nx, ny);
+
+            if (oldNeighbor.getWaterDepth() >= 1) {continue;}
+
+
+            double distance = Math.sqrt((nx-x)^2+(ny-y)^2);
+            double slope = (elevationMap[nx][ny]-elevationMap[x][y])/distance;
+
+
+
+            if (slope < minSlope) {
+                minSlope = slope;
+                candidates.clear();
+                candidates.add(dir);
+
+            } else if (slope == minSlope) {
+                candidates.add(dir);
             }
         }
 
-        if (candidates.isEmpty()) return;
+        if (candidates.isEmpty()) {return;}
 
-        int n = candidates.size() ;
+        double share = surplus / candidates.size();
 
-        for (int i = 0; i < n; i++) {
-            int[] c = candidates.get(i);
-            double share = surplus/n ;
-            SoilCell neighborCell = newSoilField[x+c[0]][y+c[1]];
-            if(neighborCell instanceof Soil){
-                Soil neighborSoil = (Soil) neighborCell;
-                neighborSoil.addSurfaceWater(share) ;
+        for (int[] candidate : candidates) {
+            int nx = x + candidate[0];
+            int ny = y + candidate[1];
+
+            SoilCell newNeighbor = newSoilField[nx][ny];
+
+            if (newNeighbor instanceof Soil) {
+                Soil neighborSoil = (Soil) newNeighbor;
+                neighborSoil.addSurfaceWater(share);
             }
         }
     }
@@ -100,7 +137,7 @@ public class Soil extends SoilCell {
     }
     public int getX(){return this.x;}
     public int getY(){return this.y;}
-    public double getWaterDepth(){return waterDepth;}
-    public void addSurfaceWater(double amount){waterDepth+=amount;}
+    public double getWaterDepth(){return this.waterDepth;}
+    public void addSurfaceWater(double amount){this.waterDepth+=amount;}
     public void setSource(boolean state){this.isSource = state;}
 }
