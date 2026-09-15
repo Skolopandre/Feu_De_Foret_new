@@ -185,6 +185,21 @@ public class ForestPanel extends JPanel {
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
+
+                if (newSoilField[x][y] instanceof Soil) {
+
+                    Soil soil = (Soil) newSoilField[x][y];
+
+                    soil.redistributeSurplus(
+                            forest,
+                            newSoilField
+                    );
+                }
+            }
+        }
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
                 soilField[x][y] = newSoilField[x][y];
                 grid[x][y] = newGrid[x][y];
                 cloudField[x][y] = newCloudField[x][y];
